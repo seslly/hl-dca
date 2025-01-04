@@ -1,0 +1,12 @@
+{
+    "comments": "example-config",
+    "secret_key": "hl-agent-api-key-here",
+    "account_address": "hl-wallet-address-here",
+    "dca_amount": 10,
+    "coin_symbol": "COPE/USDC",
+    "coin_ca": "0x53184ac4c2f5d4729f4e0c0077af63e3",
+    "hl_vault_address": "0xdfc24b077bc1425ad1dea75bcb6f8158e10df303",
+    "tg_bot_api_token": null,
+    "tg_chat_id": null
+}
+
