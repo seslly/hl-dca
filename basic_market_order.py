@@ -12,12 +12,15 @@ HL_VAULT_ADDRESS = config.get("hl_vault_address", None)
 TG_BOT_API_TOKEN = config.get("tg_bot_api_token", None)
 TG_CHAT_ID = config.get("tg_chat_id", None)
 
-def get_spot_pnl(coin, price, user):
+def get_spot_balance(coin, user):
+    print(coin, user)
     response = requests.post(HL_API_URL, json={"type": "spotClearinghouseState", "user": user})
+    print(response)
     balances = response.json()["balances"]
+    print(balances)
     for balance in balances:
         if balance["coin"] == coin:
-            return round((float(balance["total"])* price) - float(balance["entryNtl"]), 2)
+            return balance
     return 0.0
 
 def get_spot_price(coin_ca):
@@ -53,12 +56,22 @@ def main():
     sz = round((DCA_AMOUNT * 1.005 if DCA_AMOUNT == 10 else DCA_AMOUNT) / price, 2)
     msg = f"Buying {sz} {COIN_SYMBOL} at {price} USDC for {user}"
     print(msg)
+
+    #add a check to make sure user has enough USD in spot
+    if get_spot_balance("USDC", user) < 1000:
+        print("we're inside the spot balance checker")
+        msg = "You aint got no money mf."
+        return msg
+    #end check 
+
+    return "test"
     order_result = exchange.market_open(COIN_SYMBOL, is_buy, sz, None, 0.01)
     if order_result["status"] == "ok":
         for status in order_result["response"]["data"]["statuses"]:
             try:
                 filled = status["filled"]
-                pnl = get_spot_pnl(COIN_SYMBOL.split("/")[0], price, address)
+                balance = get_spot_balance(COIN_SYMBOL.split("/")[0], address)
+                pnl = round((float(balance["total"])* price) - float(balance["entryNtl"]), 2)
                 pnl_msg = f"Current PNL for {COIN_SYMBOL}: {pnl}"
                 print(pnl_msg)
                 return f'<b>{user} Order #{filled["oid"]} filled </b> {filled["totalSz"]} @{filled["avgPx"]} <blockquote> {pnl_msg} </blockquote>'
@@ -73,6 +86,7 @@ if __name__ == "__main__":
             manboy_notify(msg)
     except Exception as e:
         if TG_BOT_API_TOKEN and TG_CHAT_ID:
-            manboy_notify(f"Bruh, we're having issues: <pre><code class='language-python'>{e}</code></pre>")
+            print(f"Bruh, we're having issues: <pre><code class='language-python'>{e}</code></pre>")
+            # manboy_notify(f"Bruh, we're having issues: <pre><code class='language-python'>{e}</code></pre>")
         else:
             raise e
